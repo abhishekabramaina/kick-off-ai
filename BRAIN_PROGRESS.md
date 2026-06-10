@@ -70,4 +70,5 @@ BRAIN/
 ## 📝 Next Steps
 1. **Match Matrix UI:** Enhance the Resourcing page to show a side-by-side comparison of multiple candidates per role.
 2. **Document Upload:** Support PDF/DOCX upload for client notes and employee resumes.
-3. **Claude Migration:** Implement the production-tier LLM provider (Anthropic) for higher-reasoning PRDs.
+3. **Claude Migration:** Implement the production-tier 
+LLM provider (Anthropic) for higher-reasoning PRDs.

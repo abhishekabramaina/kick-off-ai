@@ -23,6 +23,8 @@ export const projectsApi = {
   analyze: (id: string) => fetchAPI(`/projects/${id}/analyze`, { method: "POST" }),
   finalize: (id: string, clarifications: string) => 
     fetchAPI(`/projects/${id}/finalize?clarifications=${encodeURIComponent(clarifications)}`, { method: "POST" }),
+  driveIngest: (projectId: string, data: { file_id: string, access_token: string, file_name: string, mime_type: string }) =>
+    fetchAPI(`/projects/${projectId}/drive-ingest`, { method: "POST", body: JSON.stringify(data) }),
   roles: (id: string) => fetchAPI(`/resourcing/extract-roles/${id}`, { method: "POST" }),
   matches: (roleId: string) => fetchAPI(`/resourcing/match/${roleId}`, { method: "POST" }),
   getRoleMatches: (roleId: string) => fetchAPI(`/resourcing/matches/${roleId}`),

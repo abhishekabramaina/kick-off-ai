@@ -56,3 +56,9 @@ class Match(MatchBase):
 
     class Config:
         from_attributes = True
+
+class DriveIngestRequest(BaseModel):
+    file_id: str
+    access_token: str
+    file_name: str
+    mime_type: str

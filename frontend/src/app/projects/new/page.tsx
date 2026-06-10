@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { projectsApi } from "@/lib/api";
 import ReactMarkdown from "react-markdown";
+import useDrivePicker from 'react-google-drive-picker';
 
 type Step = "input" | "analyzing" | "refinement" | "finalizing" | "complete";
 
@@ -23,6 +24,48 @@ export default function NewProject() {
   const [clarifications, setClarifications] = useState("");
   const [prd, setPrd] = useState("");
   const [loading, setLoading] = useState(false);
+  const [openPicker] = useDrivePicker();
+
+  const handleOpenPicker = () => {
+    openPicker({
+      clientId: process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID!,
+      developerKey: process.env.NEXT_PUBLIC_GOOGLE_API_KEY!,
+      viewId: "DOCS",
+      showUploadView: true,
+      showUploadFolders: true,
+      supportDrives: true,
+      multiselect: true,
+      callbackFunction: async (data) => {
+        if (data.action === 'picked') {
+          setLoading(true);
+          try {
+            // We need a project ID to ingest into. If not created, create one with a temp name.
+            let currentId = projectId;
+            if (!currentId) {
+              const tempProject = await projectsApi.create({ name: name || "Draft Project", raw_input: "" });
+              setProjectId(tempProject.id);
+              setName(tempProject.name);
+              currentId = tempProject.id;
+            }
+
+            for (const file of data.docs) {
+              const res = await projectsApi.driveIngest(currentId!, {
+                file_id: file.id,
+                access_token: data.accessToken,
+                file_name: file.name,
+                mime_type: file.mimeType
+              });
+              setRawInput(prev => prev + `\n\n--- [Ingested: ${file.name}] ---\n` + res.extracted_text);
+            }
+          } catch (err) {
+            alert("Failed to ingest from Drive");
+          } finally {
+            setLoading(false);
+          }
+        }
+      },
+    });
+  };
 
   async function handleStart() {
     setLoading(true);
@@ -74,7 +117,17 @@ export default function NewProject() {
             />
           </div>
           <div className="flex-col mt-4">
-            <label>Raw Notes / Input</label>
+            <div className="flex justify-between items-center">
+              <label>Raw Notes / Input</label>
+              <button 
+                className="btn btn-outline" 
+                style={{ fontSize: '0.8rem', padding: '0.25rem 0.75rem' }}
+                onClick={handleOpenPicker}
+                type="button"
+              >
+                📁 Import from Google Drive
+              </button>
+            </div>
             <textarea 
               className="card mt-4" 
               style={{ minHeight: '300px', padding: '0.75rem', fontFamily: 'inherit' }}
