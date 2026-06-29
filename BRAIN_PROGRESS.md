@@ -1,36 +1,50 @@
 # BRAIN: AI-Assisted Project Kickoff & Resourcing
 
-## 🚀 Status: MVP Prototype Complete
-The "BRAIN" system is now a functional prototype bridging the gap between client vision and project staffing using AI orchestration.
+## 🚀 Project Status: MVP Transition to Enterprise Core
+The "BRAIN" system has successfully evolved from a no-code prototype to a functional custom MVP. We are now establishing the architectural foundation for enterprise scale and distributed processing.
 
 ---
 
-## 🏗️ Architecture Overview
+## 🏛️ Architecture Overview
 - **Frontend:** Next.js 14 (App Router, TypeScript, Vanilla CSS)
 - **Backend:** FastAPI (Python 3.10+, SQLAlchemy, Pydantic)
 - **Database:** PostgreSQL (Development: SQLite/kickoff.db)
 - **AI Core:** Gemini 1.5 Flash (via `google-generativeai`)
+- **Planned:** N-Tier Architecture, Celery (Distributed Tasks), Vector Search (pgvector).
 
 ---
 
-## 🛠️ What We've Built So Far
+## 📅 Full Project Timeline
 
-### 1. The Kickoff Loop (Intake & Iteration)
-- **Raw Ingestion:** UI for pasting meeting notes/vision.
-- **Ambiguity Detection:** AI analyzes notes for contradictions/missing info and generates clarifying questions.
-- **Refinement UI:** Multi-step wizard allowing users to clarify AI-flagged points.
-- **PRD Generation:** AI synthesizes final notes into a structured Markdown PRD.
+### Phase 0: The No-Code MVP (Completed) ✅
+- **Goal:** Rapidly validate the business process of AI-driven project resourcing.
+- **Tech Stack:** Make.com, Notion, Google Drive, Slack.
+- **Outcome:** Proven concept for PRD ingestion, role extraction, and candidate matching.
 
-### 2. Resourcing Engine
-- **Role Extraction:** AI parses the PRD to identify specific roles (e.g., Senior Backend Engineer).
-- **Automated JDs:** Context-aware Job Descriptions generated for every identified role.
+### Phase 1: Custom Code MVP (Completed) ✅
+- **Goal:** Migrate to a custom software stack for control and user experience.
+- **Tech Stack:** FastAPI, Next.js, PostgreSQL, Gemini.
+- **Outcome:** Functional 2-tier application with PRD generation, role management, and direct talent matching.
 
-### 3. Talent Matching (The Onboarding)
-- **Internal Bench:** Database of employee resumes and availability.
-- **Skill Match Matrix:** AI compares JDs vs. Resumes to provide:
-  - **Numeric Match Score (0-100%)**
-  - **Textual Justification** (Why they match, where the gaps are).
-- **Gap Identification:** System flags roles that cannot be filled from the internal bench.
+### Phase 2: Architectural Foundation & Refactoring (Completed) ✅
+- **Goal:** Refactor to enterprise standards (N-Tier) for scalability and testability.
+- **Key Milestones:**
+  - [x] Establishment of Documentation Standards (ADR, Design Docs).
+  - [x] Implement Repository Layer (Data Access Layer).
+  - [x] Implement Service Layer (Business Logic Layer).
+  - [x] Refactor API Routers to use Dependency Injection.
+
+### Phase 3: Asynchronous Processing & Scale (Future) 🚀
+- **Goal:** Handle long-running LLM tasks without blocking API requests.
+- **Key Milestones:** Integrate Redis/RabbitMQ and Celery for background matching and scoring.
+
+### Phase 4: Advanced Search & Optimization (Future) 🧠
+- **Goal:** Move from brute-force LLM calls to mathematical optimization.
+- **Key Milestones:** Vector Embeddings (Resume/JD), Vector Database integration, and Bipartite Matching algorithms.
+
+### Phase 5: Production & CI/CD (Future) 🌐
+- **Goal:** Secure, reliable deployment.
+- **Key Milestones:** Dockerization, GitHub Actions, Cloud deployment (AWS/GCP).
 
 ---
 
@@ -38,37 +52,28 @@ The "BRAIN" system is now a functional prototype bridging the gap between client
 ```text
 BRAIN/
 ├── frontend/               # Next.js Application
-│   ├── src/app/            # Routes (Home, New Project, Bench)
-│   ├── src/lib/api.ts      # Backend Communication Layer
-│   └── globals.css         # Modern Vanilla CSS Theme
 └── backend/                # FastAPI Application
     ├── app/
-    │   ├── api/            # Route Handlers (Projects, Resourcing, Employees)
-    │   ├── models.py       # SQLAlchemy Schema (Projects, Roles, Employees, Matches)
-    │   ├── prompts.py      # AI Prompt Engineering Logic
+    │   ├── api/            # Presentation Layer (API Routers)
+    │   ├── repositories/   # Data Access Layer (SQLAlchemy Logic)
+    │   ├── services/       # Business Logic Layer (Domain Rules)
+    │   ├── utils/          # Shared Utilities (File Parsing, etc.)
+    │   ├── models.py       # SQLAlchemy Schema
+    │   ├── schemas.py      # Pydantic Models
+    │   ├── prompts.py      # AI Prompt Engineering
     │   └── llm_service.py  # Provider-agnostic AI Wrapper
-    └── seed_data.py        # Script to populate initial employee bench
+    └── docs/               # Project Documentation (ADRs, Design Docs)
 ```
 
 ---
 
-## 📈 Progress Dashboard
+## 📈 Current Progress Dashboard
 | Phase | Feature | Status |
 | :--- | :--- | :--- |
-| **Phase 1** | Project Setup & Infrastructure | ✅ Complete |
-| **Phase 1** | Database Schema & Seed Data | ✅ Complete |
-| **Phase 2** | LLM Abstraction Layer (Gemini) | ✅ Complete |
-| **Phase 2** | PRD & Ambiguity Logic | ✅ Complete |
-| **Phase 2** | Role & Match API Endpoints | ✅ Complete |
-| **Phase 3** | Global Design & Layout | ✅ Complete |
-| **Phase 3** | Kickoff Wizard UI | ✅ Complete |
-| **Phase 3** | Bench & Project Dashboards | ✅ Complete |
-| **Phase 4** | Advanced Matching UI | 🏗️ Next Step |
-
----
-
-## 📝 Next Steps
-1. **Match Matrix UI:** Enhance the Resourcing page to show a side-by-side comparison of multiple candidates per role.
-2. **Document Upload:** Support PDF/DOCX upload for client notes and employee resumes.
-3. **Claude Migration:** Implement the production-tier 
-LLM provider (Anthropic) for higher-reasoning PRDs.
+| **P2** | Multi-Tier Architecture ADR | ✅ Complete |
+| **P2** | Repository Layer Implementation | ✅ Complete |
+| **P2** | Service Layer Implementation | ✅ Complete |
+| **P2** | API Router Refactoring | ✅ Complete |
+| **P1** | Google Drive Ingestion | ✅ Complete |
+| **P1** | PRD & Ambiguity Logic | ✅ Complete |
+| **P1** | Bench & Project Dashboards | ✅ Complete |

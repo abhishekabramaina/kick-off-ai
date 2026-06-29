@@ -1,4 +1,4 @@
-const API_BASE = "http://localhost:8000";
+const API_BASE = "http://127.0.0.1:8000";
 
 export async function fetchAPI(endpoint: string, options: RequestInit = {}) {
   const res = await fetch(`${API_BASE}${endpoint}`, {
@@ -25,6 +25,17 @@ export const projectsApi = {
     fetchAPI(`/projects/${id}/finalize?clarifications=${encodeURIComponent(clarifications)}`, { method: "POST" }),
   driveIngest: (projectId: string, data: { file_id: string, access_token: string, file_name: string, mime_type: string }) =>
     fetchAPI(`/projects/${projectId}/drive-ingest`, { method: "POST", body: JSON.stringify(data) }),
+  localUpload: (projectId: string, file: File) => {
+    const formData = new FormData();
+    formData.append("file", file);
+    return fetch(`${API_BASE}/projects/${projectId}/upload`, {
+      method: "POST",
+      body: formData,
+    }).then(res => res.json());
+  },
+  ingestExisting: (projectId: string, fileName: string) =>
+    fetchAPI(`/projects/${projectId}/ingest-existing?file_name=${encodeURIComponent(fileName)}`, { method: "POST" }),
+  listAvailableFiles: () => fetchAPI("/projects/available-files"),
   roles: (id: string) => fetchAPI(`/resourcing/extract-roles/${id}`, { method: "POST" }),
   matches: (roleId: string) => fetchAPI(`/resourcing/match/${roleId}`, { method: "POST" }),
   getRoleMatches: (roleId: string) => fetchAPI(`/resourcing/matches/${roleId}`),

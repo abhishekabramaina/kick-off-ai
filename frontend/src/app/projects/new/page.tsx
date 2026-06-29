@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { projectsApi } from "@/lib/api";
 import ReactMarkdown from "react-markdown";
@@ -16,6 +16,7 @@ interface Ambiguity {
 
 export default function NewProject() {
   const router = useRouter();
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const [step, setStep] = useState<Step>("input");
   const [name, setName] = useState("");
   const [rawInput, setRawInput] = useState("");
@@ -24,12 +25,49 @@ export default function NewProject() {
   const [clarifications, setClarifications] = useState("");
   const [prd, setPrd] = useState("");
   const [loading, setLoading] = useState(false);
-  const [openPicker] = useDrivePicker();
+  const [selectedFiles, setSelectedFiles] = useState<{name: string, status: 'pending' | 'ingesting' | 'done'}[]>([]);
+  const [availableFiles, setAvailableFiles] = useState<string[]>([]);
+  const [showAvailable, setShowAvailable] = useState(false);
+  const [openPicker, authResponse] = useDrivePicker();
+
+  const handleFetchAvailable = async () => {
+    try {
+      const data = await projectsApi.listAvailableFiles();
+      setAvailableFiles(data.files);
+      setShowAvailable(!showAvailable);
+    } catch (err) {
+      alert("Failed to fetch available files");
+    }
+  };
+
+  const handleIngestExisting = async (fileName: string) => {
+    setSelectedFiles(prev => [...prev, { name: fileName, status: 'ingesting' }]);
+    setLoading(true);
+    try {
+      let currentId = projectId;
+      if (!currentId) {
+        const tempProject = await projectsApi.create({ name: name || "Draft Project", raw_input: "" });
+        setProjectId(tempProject.id.toString());
+        setName(tempProject.name);
+        currentId = tempProject.id.toString();
+      }
+
+      const res = await projectsApi.ingestExisting(currentId!, fileName);
+      setSelectedFiles(prev => prev.map(f => f.name === fileName ? { ...f, status: 'done' } : f));
+      setRawInput(prev => prev + `\n\n--- [From Server: ${fileName}] ---\n` + res.extracted_text);
+    } catch (err) {
+      alert("Failed to ingest existing file");
+      setSelectedFiles(prev => prev.filter(f => f.name !== fileName));
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const handleOpenPicker = () => {
     openPicker({
       clientId: process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID!,
       developerKey: process.env.NEXT_PUBLIC_GOOGLE_API_KEY!,
+      appId: process.env.NEXT_PUBLIC_GOOGLE_APP_ID!,
       viewId: "DOCS",
       showUploadView: true,
       showUploadFolders: true,
@@ -37,24 +75,35 @@ export default function NewProject() {
       multiselect: true,
       callbackFunction: async (data) => {
         if (data.action === 'picked') {
+          // Initialize selected files list
+          const newFiles = data.docs.map(f => ({ name: f.name, status: 'pending' as const }));
+          setSelectedFiles(prev => [...prev, ...newFiles]);
+
           setLoading(true);
           try {
             // We need a project ID to ingest into. If not created, create one with a temp name.
             let currentId = projectId;
             if (!currentId) {
               const tempProject = await projectsApi.create({ name: name || "Draft Project", raw_input: "" });
-              setProjectId(tempProject.id);
+              setProjectId(tempProject.id.toString());
               setName(tempProject.name);
-              currentId = tempProject.id;
+              currentId = tempProject.id.toString();
             }
 
             for (const file of data.docs) {
+              // Update status to 'ingesting'
+              setSelectedFiles(prev => prev.map(f => f.name === file.name ? { ...f, status: 'ingesting' } : f));
+
               const res = await projectsApi.driveIngest(currentId!, {
                 file_id: file.id,
-                access_token: data.accessToken,
+                access_token: authResponse?.access_token || "",
                 file_name: file.name,
                 mime_type: file.mimeType
               });
+
+              // Update status to 'done'
+              setSelectedFiles(prev => prev.map(f => f.name === file.name ? { ...f, status: 'done' } : f));
+
               setRawInput(prev => prev + `\n\n--- [Ingested: ${file.name}] ---\n` + res.extracted_text);
             }
           } catch (err) {
@@ -65,6 +114,40 @@ export default function NewProject() {
         }
       },
     });
+  };
+
+  const handleLocalUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files;
+    if (!files || files.length === 0) return;
+
+    const fileList = Array.from(files);
+    const newFiles = fileList.map(f => ({ name: f.name, status: 'pending' as const }));
+    setSelectedFiles(prev => [...prev, ...newFiles]);
+
+    setLoading(true);
+    try {
+      let currentId = projectId;
+      if (!currentId) {
+        const tempProject = await projectsApi.create({ name: name || "Draft Project", raw_input: "" });
+        setProjectId(tempProject.id.toString());
+        setName(tempProject.name);
+        currentId = tempProject.id.toString();
+      }
+
+      for (const file of fileList) {
+        setSelectedFiles(prev => prev.map(f => f.name === file.name ? { ...f, status: 'ingesting' } : f));
+        
+        const res = await projectsApi.localUpload(currentId!, file);
+        
+        setSelectedFiles(prev => prev.map(f => f.name === file.name ? { ...f, status: 'done' } : f));
+        setRawInput(prev => prev + `\n\n--- [Uploaded: ${file.name}] ---\n` + res.extracted_text);
+      }
+    } catch (err) {
+      alert("Failed to upload local files");
+    } finally {
+      setLoading(false);
+      if (fileInputRef.current) fileInputRef.current.value = "";
+    }
   };
 
   async function handleStart() {
@@ -119,15 +202,81 @@ export default function NewProject() {
           <div className="flex-col mt-4">
             <div className="flex justify-between items-center">
               <label>Raw Notes / Input</label>
-              <button 
-                className="btn btn-outline" 
-                style={{ fontSize: '0.8rem', padding: '0.25rem 0.75rem' }}
-                onClick={handleOpenPicker}
-                type="button"
-              >
-                📁 Import from Google Drive
-              </button>
+              <div className="flex gap-2">
+                <button 
+                  className="btn btn-outline" 
+                  style={{ fontSize: '0.8rem', padding: '0.25rem 0.75rem' }}
+                  onClick={handleOpenPicker}
+                  type="button"
+                >
+                  📁 Google Drive
+                </button>
+                <button 
+                  className="btn btn-outline" 
+                  style={{ fontSize: '0.8rem', padding: '0.25rem 0.75rem' }}
+                  onClick={() => fileInputRef.current?.click()}
+                  type="button"
+                >
+                  💻 Local Upload
+                </button>
+                <button 
+                  className="btn btn-outline" 
+                  style={{ fontSize: '0.8rem', padding: '0.25rem 0.75rem' }}
+                  onClick={handleFetchAvailable}
+                  type="button"
+                >
+                  📂 Server Files
+                </button>
+                <input 
+                  type="file" 
+                  multiple 
+                  ref={fileInputRef} 
+                  style={{ display: 'none' }} 
+                  onChange={handleLocalUpload}
+                />
+              </div>
             </div>
+
+            {showAvailable && availableFiles.length > 0 && (
+              <div className="card mt-2" style={{ fontSize: '0.85rem', maxHeight: '150px', overflowY: 'auto', background: '#f0f9ff' }}>
+                <div className="flex justify-between items-center mb-2">
+                  <p style={{ fontWeight: '600' }}>Available on Server:</p>
+                  <button className="text-muted" onClick={() => setShowAvailable(false)}>✕</button>
+                </div>
+                <div className="flex-col gap-1">
+                  {availableFiles.map((file, i) => (
+                    <div key={i} className="flex justify-between items-center py-1 border-b" style={{ borderColor: '#e0e7ff' }}>
+                      <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: '70%' }}>📄 {file}</span>
+                      <button 
+                        className="btn btn-primary" 
+                        style={{ fontSize: '0.65rem', padding: '0.1rem 0.4rem' }}
+                        onClick={() => handleIngestExisting(file)}
+                        disabled={loading}
+                      >
+                        Add
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {selectedFiles.length > 0 && (
+              <div className="card mt-2" style={{ fontSize: '0.85rem', background: '#f8fafc', border: '1px dashed var(--border)' }}>
+                <p style={{ fontWeight: '600', marginBottom: '0.5rem' }}>Selected Files:</p>
+                <div className="flex-col gap-2">
+                  {selectedFiles.map((file, i) => (
+                    <div key={i} className="flex justify-between items-center">
+                      <span>📄 {file.name}</span>
+                      <span className={`badge ${file.status === 'done' ? 'badge-success' : 'badge-warning'}`} style={{ fontSize: '0.7rem' }}>
+                        {file.status === 'ingesting' ? 'Ingesting...' : file.status.toUpperCase()}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
             <textarea 
               className="card mt-4" 
               style={{ minHeight: '300px', padding: '0.75rem', fontFamily: 'inherit' }}

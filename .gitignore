@@ -49,4 +49,6 @@ env/
 # Project Specific
 backend/kickoff.db
 backend/uploads/
+*.db
+Session_*.json
 *.log

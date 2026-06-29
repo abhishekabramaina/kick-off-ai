@@ -92,6 +92,7 @@ h1, h2, h3 {
 
 .badge-warning { background: #fef3c7; color: #92400e; }
 .badge-success { background: #d1fae5; color: #065f46; }
+.badge-secondary { background: #f1f5f9; color: #475569; }
 
 nav {
   border-bottom: 1px solid var(--border);
