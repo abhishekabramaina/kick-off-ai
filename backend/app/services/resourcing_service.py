@@ -99,9 +99,9 @@ class ResourcingService:
             return "role_not_found"
         
         # Optimization: Prevent redundant AI calls
-        count = self.match_repo.count_by_role(role_id)
-        if count > 0:
-            return "matches_already_exist"
+        existing_matches = self.match_repo.get_by_role(role_id)
+        if existing_matches:
+            return existing_matches
 
         # Cross-Domain: Using employee_repo to get candidates
         bench_employees = self.employee_repo.get_on_bench()

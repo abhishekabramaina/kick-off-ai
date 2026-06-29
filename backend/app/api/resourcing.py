@@ -41,7 +41,7 @@ def get_matches(
     """
     return service.get_role_matches(role_id)
 
-@router.post("/match/{role_id}")
+@router.post("/match/{role_id}", response_model=List[schemas.Match])
 async def match_bench(
     role_id: int,
     service: ResourcingService = Depends(get_resourcing_service),
@@ -56,7 +56,5 @@ async def match_bench(
     # Handle Service Results
     if result == "role_not_found":
         raise HTTPException(status_code=404, detail="Role not found")
-    if result == "matches_already_exist":
-        return {"message": "Matches already exist"}
         
-    return {"message": f"Successfully processed {len(result)} matches"}
+    return result

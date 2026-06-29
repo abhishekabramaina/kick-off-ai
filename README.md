@@ -1,114 +1,72 @@
-# BRAIN: AI-Assisted Project Kickoff & Resourcing
+# Project Brain: AI-Assisted Distributed Staffing Engine
 
-BRAIN is an enterprise-grade AI platform designed to streamline the project kickoff process. It automates PRD ingestion, extracts project requirements, identifies necessary roles, and matches them with available talent (the "Bench") using advanced LLM reasoning.
+## 🚀 Overview
+**Project Brain** is an enterprise-grade backend system designed to orchestrate the complex workflow of project kickoff and team resourcing. It automates the ingestion of project requirements, resolves ambiguities using Large Language Models (LLMs), generates finalized Product Requirement Documents (PRDs), extracts necessary roles, and algorithmically matches candidates from a bench pool to those roles.
 
-## 🚀 Key Features
+Originally prototyped using no-code tools (Make.com, Notion), this system has been re-architected into a robust, custom **Multi-Tiered Python application** designed for scalability, testability, and fault tolerance.
 
-- **AI-Driven PRD Ingestion:** Automatically parse project requirements from documents.
-- **Role Extraction:** Identify technical and non-technical roles required for project success.
-- **Intelligent Matching:** Match project needs with employee skills and availability.
-- **Bench Management:** Track employee skills, seniority, and current project allocations.
-- **Multi-Tier Architecture:** Built with scalability and maintainability in mind (N-Tier Backend).
+---
 
-## 🛠️ Tech Stack
+## 🏛️ System Architecture
 
-- **Frontend:** Next.js 14 (App Router, TypeScript, Vanilla CSS)
-- **Backend:** FastAPI (Python 3.10+, SQLAlchemy, Pydantic)
-- **Database:** PostgreSQL (supports SQLite for local development)
-- **AI Core:** Gemini 1.5 Flash (via `google-generativeai`)
-- **Infrastructure:** Docker-ready, designed for distributed tasks with Celery/Redis (Roadmap).
+The backend is built on **FastAPI** and **SQLAlchemy**, strictly adhering to **Domain-Driven Design (DDD)** and an **N-Tier Architecture**. This decouples presentation logic from business rules and data access, ensuring a highly testable and maintainable codebase.
 
-## 📂 Project Structure
+### **Core Layers**
+1. **Presentation Layer (API Routers):** "Thin Controllers" that handle HTTP requests, validate input schemas (Pydantic), and delegate all logic to the Service layer.
+2. **Business Logic Layer (Services):** Orchestrates complex workflows, enforces domain rules, and coordinates external LLM API calls.
+3. **Data Access Layer (Repositories):** Encapsulates all SQLAlchemy logic, abstracting database interactions (PostgreSQL/SQLite) behind clean interfaces.
 
-```text
-BRAIN/
-├── frontend/               # Next.js Application
-│   ├── src/app/            # App Router pages and layouts
-│   └── src/lib/            # API clients and utilities
-└── backend/                # FastAPI Application
-    ├── app/
-    │   ├── api/            # Presentation Layer (API Routers)
-    │   ├── repositories/   # Data Access Layer (SQLAlchemy Logic)
-    │   ├── services/       # Business Logic Layer (Domain Rules)
-    │   ├── utils/          # Shared Utilities (File Parsing, etc.)
-    │   ├── models.py       # SQLAlchemy Schema
-    │   ├── schemas.py      # Pydantic Models
-    │   ├── prompts.py      # AI Prompt Engineering
-    │   └── llm_service.py  # Provider-agnostic AI Wrapper
-    └── docs/               # Project Documentation (ADRs, Design Docs)
-```
+### **Engineering Principles Applied**
+- **Separation of Concerns (SoC):** Distinct boundaries between API, Business Logic, and Data Persistence.
+- **Dependency Injection (DI) & Inversion of Control (IoC):** Repositories and Services are injected at runtime via FastAPI's `Depends` system, allowing for complete mockability during unit testing.
+- **Single Responsibility Principle (SRP):** Technical parsing logic (e.g., extracting text from binary PDFs/DOCX files) is isolated in a dedicated `utils/` package.
 
-## 🚦 Getting Started
+---
 
-### Prerequisites
-- Node.js (v18+)
-- Python (v3.10+)
-- Google Gemini API Key
+## ⚙️ Tech Stack
+- **Language:** Python 3.10+
+- **API Framework:** FastAPI
+- **Database ORM:** SQLAlchemy (Async/Sync)
+- **Data Validation:** Pydantic
+- **AI Orchestration:** Google Gemini 1.5 Flash (via `google-generativeai`)
+- **Document Processing:** PyPDF2, python-docx
+- **Frontend (Client):** Next.js 14, React, TypeScript (Monorepo setup)
 
-### Backend Setup
-1. Navigate to the backend directory:
-   ```bash
-   cd backend
-   ```
-2. Create and activate a virtual environment:
-   ```bash
-   python -m venv venv
-   # On Windows:
-   .\venv\Scripts\activate
-   # On Unix/macOS:
-   source venv/bin/activate
-   ```
-3. Install dependencies:
-   ```bash
-   pip install fastapi uvicorn sqlalchemy google-generativeai pydantic python-dotenv psycopg2-binary
-   ```
-4. Create a `.env` file in the `backend` directory:
-   ```env
-   GOOGLE_API_KEY=your_gemini_api_key
-   DATABASE_URL=postgresql://postgres:postgres@localhost/kickoff_db
-   # For SQLite use: sqlite:///./kickoff.db
-   ```
-5. Run the server:
-   ```bash
-   uvicorn app.main:app --reload
-   ```
+---
 
-### Seeding Initial Data
-To populate the database with initial "Bench" data (employees):
-1. While in the `backend` directory and with the virtual environment activated:
-   ```bash
-   python seed_data.py
-   ```
-   This will add a set of sample employees with diverse skills to your local database.
+## 🧠 Core Domains & Workflows
 
-### Frontend Setup
-1. Navigate to the frontend directory:
-   ```bash
-   cd frontend
-   ```
-2. Install dependencies:
-   ```bash
-   npm install
-   ```
-3. Run the development server:
-   ```bash
-   npm run dev
-   ```
-4. Open [http://localhost:3000](http://localhost:3000) in your browser.
+### 1. Project Domain (`ProjectService`)
+- **Drive Ingestion:** Securely downloads and extracts text from client requirements via Google Drive API.
+- **Ambiguity Detection:** Passes raw client notes to an LLM to identify missing technical or business constraints.
+- **PRD Generation:** Synthesizes client notes and clarifications into a structured, finalized Product Requirements Document.
 
-## 🏛️ Architecture
+### 2. Employee Domain (`EmployeeService`)
+- Manages the lifecycle of talent pool data (resumes, skills).
+- Tracks employee availability and "Bench" status.
 
-The backend follows an **N-Tier Architecture** to ensure separation of concerns:
-- **Presentation Layer (API):** Handles HTTP requests and response formatting.
-- **Service Layer (Business Logic):** Orchestrates domain rules and AI interactions.
-- **Data Access Layer (Repository):** Manages database operations.
+### 3. Resourcing Domain (`ResourcingService`)
+- **Cross-Domain Orchestration:** Interacts with Project, Role, Employee, and Match repositories.
+- **Role Extraction:** Uses LLMs to analyze finalized PRDs and automatically generate required job descriptions and technical skill sets.
+- **Algorithmic Matching:** Evaluates benched employees against extracted roles, generating match scores and justifications to optimize team allocation.
 
-For more details, see `backend/docs/adr/001-multi-tier-architecture.md`.
+---
 
-## 🗺️ Roadmap
-- **Phase 3:** Asynchronous Processing with Celery & Redis.
-- **Phase 4:** Vector Search for advanced talent matching.
-- **Phase 5:** Production Deployment with Docker & CI/CD.
+## 🗺️ Roadmap & Future Enhancements
 
-## 📄 License
-Internal Project. All rights reserved.
+The system is designed with extensibility in mind to handle incredible scale and speed.
+
+- **Phase 3: Asynchronous Distributed Processing:**
+  - **Goal:** Offload long-running LLM batch requests (e.g., scoring 100+ candidates) from the main API thread.
+  - **Implementation:** Integration of a Message Broker (Redis/RabbitMQ) and distributed task workers (Celery).
+- **Phase 4: Advanced Search & Algorithms:**
+  - **Goal:** Move from brute-force LLM matching to scalable, mathematical retrieval.
+  - **Implementation:** Generating **Vector Embeddings** for resumes and job descriptions, stored in **pgvector**, utilizing Cosine Similarity search and optimization algorithms (Bipartite matching) for global bench allocation.
+- **Phase 5: Cloud Deployment:**
+  - **Implementation:** Dockerization, CI/CD via GitHub Actions, and deployment to AWS.
+
+---
+
+## 📜 Documentation
+- Complete project timeline and status tracking available in `BRAIN_PROGRESS.md`.
+- Architecture Decision Records (ADRs) and Technical Design documents are maintained in `backend/docs/`.

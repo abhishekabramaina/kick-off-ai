@@ -11,10 +11,14 @@ function RoleCard({ role, employees }: { role: any, employees: any[] }) {
   useEffect(() => {
     async function fetchMatches() {
       try {
-        // Trigger matching if it hasn't happened
-        await projectsApi.matches(role.id);
-        // Get the results
-        const m = await projectsApi.getRoleMatches(role.id);
+        // 1. Try to get existing matches first (FAST)
+        let m = await projectsApi.getRoleMatches(role.id);
+        
+        // 2. If no matches exist, trigger the AI analysis (SLOW the first time)
+        if (m.length === 0) {
+          m = await projectsApi.matches(role.id);
+        }
+        
         setMatches(m);
       } catch (err) {
         console.error(err);
@@ -31,8 +35,10 @@ function RoleCard({ role, employees }: { role: any, employees: any[] }) {
     <div className="card">
       <div className="flex justify-between items-center mb-4">
         <h3>{role.title}</h3>
-        <div className={`badge ${matches.length > 0 ? 'badge-success' : 'badge-warning'}`}>
-          {matches.length > 0 ? 'MATCHES FOUND' : 'ANALYZING...'}
+        <div className={`badge ${
+          loading ? 'badge-warning' : (matches.length > 0 ? 'badge-success' : 'badge-secondary')
+        }`}>
+          {loading ? 'ANALYZING...' : (matches.length > 0 ? 'MATCHES FOUND' : 'NO MATCHES')}
         </div>
       </div>
       <p className="mb-4"><strong>Requirement:</strong> {role.draft_jd}</p>
