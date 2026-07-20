@@ -14,7 +14,7 @@ class Project(Base):
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     updated_at = Column(DateTime(timezone=True), onupdate=func.now())
 
-    roles = relationship("Role", back_populates="project")
+    roles = relationship("Role", back_populates="project", cascade="all, delete-orphan")
 
 class Role(Base):
     __tablename__ = "roles"
@@ -26,7 +26,7 @@ class Role(Base):
     status = Column(String, default="draft") # draft, open, filled
 
     project = relationship("Project", back_populates="roles")
-    matches = relationship("Match", back_populates="role")
+    matches = relationship("Match", back_populates="role", cascade="all, delete-orphan")
 
 class Employee(Base):
     __tablename__ = "employees"
@@ -35,6 +35,7 @@ class Employee(Base):
     name = Column(String, nullable=False)
     resume_text = Column(Text, nullable=True)
     is_on_bench = Column(Boolean, default=True)
+    status = Column(String, default="on_bench") # on_bench, assigned, suspended, archived
 
     matches = relationship("Match", back_populates="employee")
 

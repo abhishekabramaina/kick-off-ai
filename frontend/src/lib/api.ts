@@ -1,4 +1,4 @@
-const API_BASE = "http://127.0.0.1:8000";
+const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://127.0.0.1:8000";
 
 export async function fetchAPI(endpoint: string, options: RequestInit = {}) {
   const res = await fetch(`${API_BASE}${endpoint}`, {
@@ -39,9 +39,18 @@ export const projectsApi = {
   roles: (id: string) => fetchAPI(`/resourcing/extract-roles/${id}`, { method: "POST" }),
   matches: (roleId: string) => fetchAPI(`/resourcing/match/${roleId}`, { method: "POST" }),
   getRoleMatches: (roleId: string) => fetchAPI(`/resourcing/matches/${roleId}`),
+  archive: (id: string) => fetchAPI(`/projects/${id}/archive`, { method: "POST" }),
+  unarchive: (id: string) => fetchAPI(`/projects/${id}/unarchive`, { method: "POST" }),
+  delete: (id: string) => fetchAPI(`/projects/${id}`, { method: "DELETE" }),
 };
 
 export const employeesApi = {
   list: () => fetchAPI("/employees/"),
   bench: () => fetchAPI("/employees/bench"),
+  create: (data: { name: string; resume_text: string; is_on_bench?: boolean; status?: string }) =>
+    fetchAPI("/employees/", { method: "POST", body: JSON.stringify(data) }),
+  updateStatus: (id: number | string, status: string) =>
+    fetchAPI(`/employees/${id}/status?status=${encodeURIComponent(status)}`, { method: "PATCH" }),
+  updateProfile: (id: number | string, data: { name?: string; resume_text?: string }) =>
+    fetchAPI(`/employees/${id}`, { method: "PUT", body: JSON.stringify(data) }),
 };

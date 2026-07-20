@@ -3,13 +3,14 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { projectsApi, employeesApi } from "@/lib/api";
+import { IconPlus, IconFileText, IconUsers } from "@/components/Icons";
 
 export default function Home() {
   const [projects, setProjects] = useState<any[]>([]);
   const [benchCount, setBenchCount] = useState(0);
 
   useEffect(() => {
-    projectsApi.list().then(data => setProjects(data.slice(0, 3)));
+    projectsApi.list().then(data => setProjects(data.slice(0, 5)));
     employeesApi.bench().then(data => setBenchCount(data.length));
   }, []);
 
@@ -20,8 +21,9 @@ export default function Home() {
           <h1>Welcome back</h1>
           <p className="text-muted">Streamline your project kickoff with AI.</p>
         </div>
-        <Link href="/projects/new" className="btn btn-primary">
-          Start New Project
+        <Link href="/projects/new" className="btn btn-primary flex items-center gap-4">
+          <IconPlus size={18} />
+          <span>Start New Project</span>
         </Link>
       </header>
 
@@ -29,7 +31,7 @@ export default function Home() {
         <div className="card" style={{ flex: 1 }}>
           <h3>Projects</h3>
           <p style={{ fontSize: '2rem', fontWeight: 700 }}>{projects.length}</p>
-          <p className="text-muted">Recent projects</p>
+          <p className="text-muted">Active projects</p>
         </div>
         <div className="card" style={{ flex: 1 }}>
           <h3>Bench</h3>
@@ -52,8 +54,43 @@ export default function Home() {
           <div className="flex-col gap-4">
             {projects.map(p => (
               <div key={p.id} className="card flex justify-between items-center">
-                <h3>{p.name}</h3>
-                <Link href={`/projects/${p.id}`} className="btn btn-outline">View Details</Link>
+                <div>
+                  <div className="flex items-center gap-4">
+                    <h3>{p.name}</h3>
+                    <span className={`badge ${
+                      p.status === 'finalized' ? 'badge-success' : 
+                      p.status === 'archived' ? 'badge-archived' : 'badge-warning'
+                    }`}>
+                      {p.status.toUpperCase()}
+                    </span>
+                  </div>
+                </div>
+
+                <div className="toolbar-group">
+                  <div className="tooltip-wrapper">
+                    <Link 
+                      href={`/projects/${p.id}/resourcing`} 
+                      className="toolbar-icon-btn toolbar-icon-btn-primary"
+                      aria-label="Resourcing"
+                    >
+                      <IconUsers size={18} />
+                    </Link>
+                    <span className="fluent-tooltip">Resourcing</span>
+                  </div>
+
+                  <div className="pipe-divider" />
+
+                  <div className="tooltip-wrapper">
+                    <Link 
+                      href={`/projects/${p.id}`} 
+                      className="toolbar-icon-btn toolbar-icon-btn-primary"
+                      aria-label="View PRD"
+                    >
+                      <IconFileText size={18} />
+                    </Link>
+                    <span className="fluent-tooltip">View PRD</span>
+                  </div>
+                </div>
               </div>
             ))}
           </div>

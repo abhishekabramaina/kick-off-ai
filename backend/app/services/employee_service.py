@@ -33,12 +33,14 @@ class EmployeeService:
         """
         return self.repo.get_on_bench()
 
-    def create_employee(self, name: str, resume_text: str, is_on_bench: bool = True):
-        """
-        Handles the workflow for onboarding a new employee.
-        - What: Coordinates the creation of a new employee entity.
-        - Why: Central entry point for all "Employee Creation" logic.
-        - How: Delegates persistence to the repository.
-        """
-        # Note: If we had business validation (e.g., uniqueness checks), it would live here.
-        return self.repo.create(name=name, resume_text=resume_text, is_on_bench=is_on_bench)
+    def get_employee(self, employee_id: int):
+        return self.repo.get_by_id(employee_id)
+
+    def create_employee(self, name: str, resume_text: str, is_on_bench: bool = True, status: str = "on_bench"):
+        return self.repo.create(name=name, resume_text=resume_text, is_on_bench=is_on_bench, status=status)
+
+    def update_status(self, employee_id: int, status: str):
+        return self.repo.update_status(employee_id, status)
+
+    def update_profile(self, employee_id: int, name: str = None, resume_text: str = None):
+        return self.repo.update_profile(employee_id, name, resume_text)

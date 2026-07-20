@@ -223,3 +223,42 @@ async def finalize_prd(
     if result is None:
         raise HTTPException(status_code=404, detail="Project not found")
     return result
+
+@router.post("/{project_id}/archive", response_model=schemas.Project)
+def archive_project(
+    project_id: int,
+    service: ProjectService = Depends(get_project_service)
+):
+    """
+    Archives a project by setting its status to 'archived'.
+    """
+    result = service.archive_project(project_id)
+    if result is None:
+        raise HTTPException(status_code=404, detail="Project not found")
+    return result
+
+@router.post("/{project_id}/unarchive", response_model=schemas.Project)
+def unarchive_project(
+    project_id: int,
+    service: ProjectService = Depends(get_project_service)
+):
+    """
+    Restores an archived project back to active status.
+    """
+    result = service.unarchive_project(project_id)
+    if result is None:
+        raise HTTPException(status_code=404, detail="Project not found")
+    return result
+
+@router.delete("/{project_id}")
+def delete_project(
+    project_id: int,
+    service: ProjectService = Depends(get_project_service)
+):
+    """
+    Permanently deletes a project and its associated roles and matches.
+    """
+    success = service.delete_project(project_id)
+    if not success:
+        raise HTTPException(status_code=404, detail="Project not found")
+    return {"message": "Project deleted successfully"}

@@ -2,23 +2,6 @@ from pydantic import BaseModel
 from typing import List, Optional
 from datetime import datetime
 
-class ProjectBase(BaseModel):
-    name: str
-    raw_input: Optional[str] = None
-
-class ProjectCreate(ProjectBase):
-    pass
-
-class Project(ProjectBase):
-    id: int
-    final_prd: Optional[str] = None
-    status: str
-    created_at: datetime
-    updated_at: Optional[datetime] = None
-
-    class Config:
-        from_attributes = True
-
 class RoleBase(BaseModel):
     title: str
     draft_jd: Optional[str] = None
@@ -34,13 +17,38 @@ class Role(RoleBase):
     class Config:
         from_attributes = True
 
+class ProjectBase(BaseModel):
+    name: str
+    raw_input: Optional[str] = None
+
+class ProjectCreate(ProjectBase):
+    pass
+
+class Project(ProjectBase):
+    id: int
+    final_prd: Optional[str] = None
+    status: str
+    created_at: datetime
+    updated_at: Optional[datetime] = None
+    roles: List[Role] = []
+
+    class Config:
+        from_attributes = True
+
 class EmployeeBase(BaseModel):
     name: str
     resume_text: Optional[str] = None
     is_on_bench: bool = True
+    status: Optional[str] = "on_bench"
+
+class EmployeeUpdate(BaseModel):
+    name: Optional[str] = None
+    resume_text: Optional[str] = None
+    status: Optional[str] = None
 
 class Employee(EmployeeBase):
     id: int
+    status: str = "on_bench"
 
     class Config:
         from_attributes = True
