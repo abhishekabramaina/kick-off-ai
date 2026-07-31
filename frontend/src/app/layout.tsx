@@ -19,7 +19,7 @@ export default function RootLayout({
           <Link href="/" className="logo">Kickoff AI</Link>
           <div>
             <Link href="/projects">Projects</Link>
-            <Link href="/bench">Bench</Link>
+            <Link href="/bench">Talent</Link>
           </div>
         </nav>
         <main className="container">

@@ -58,3 +58,16 @@ class ProjectRepository:
         self.db.commit()
         self.db.refresh(project)
         return project
+
+    def delete(self, project_id: int) -> bool:
+        """
+        Deletes a project record from the database.
+        - What: DELETE FROM projects WHERE id = project_id;
+        - How: Finds project, calls self.db.delete(project), and commits.
+        """
+        project = self.get_by_id(project_id)
+        if not project:
+            return False
+        self.db.delete(project)
+        self.db.commit()
+        return True

@@ -16,13 +16,19 @@ class GeminiService(LLMService):
         if not api_key:
             raise ValueError("GOOGLE_API_KEY not found in environment")
         genai.configure(api_key=api_key)
-        self.model = genai.GenerativeModel('gemini-2.5-flash') # Using flash for speed/cost
+        self.model = genai.GenerativeModel('gemini-2.5-flash-lite') # Using flash for speed/cost
 
     async def generate_text(self, prompt: str) -> str:
-        # In a real async environment, we'd use the async version of the SDK
-        # For this prototype, we'll keep it simple.
-        response = self.model.generate_content(prompt)
-        return response.text
+        try:
+            response = self.model.generate_content(prompt)
+            return response.text
+        except Exception as e:
+            try:
+                fallback_model = genai.GenerativeModel('gemini-1.5-pro')
+                response = fallback_model.generate_content(prompt)
+                return response.text
+            except Exception:
+                raise e
 
 def get_llm_service() -> LLMService:
     provider = os.getenv("LLM_PROVIDER", "google").lower()

@@ -17,33 +17,68 @@ class EmployeeRepository:
         """
         self.db = db
 
+    def get_by_id(self, employee_id: int):
+        """
+        Retrieves a single employee by ID.
+        """
+        return self.db.query(models.Employee).filter(models.Employee.id == employee_id).first()
+
     def get_all(self):
         """
         Retrieves all employees from the database.
-        - What: SELECT * FROM employees;
-        - Why: Moves database-specific syntax out of the API layer.
-        - How: Uses SQLAlchemy's query(models.Employee).all() to fetch all records.
         """
         return self.db.query(models.Employee).all()
 
     def get_on_bench(self):
         """
-        Retrieves only employees currently on the bench.
-        - What: SELECT * FROM employees WHERE is_on_bench = true;
-        - Why: Centralizes the filter logic for "bench status" in one place.
-        - How: Filters the Employee model by the is_on_bench boolean column.
+        Retrieves employees available on the bench (status='on_bench' or is_on_bench=True).
         """
-        return self.db.query(models.Employee).filter(models.Employee.is_on_bench == True).all()
+        return self.db.query(models.Employee).filter(
+            (models.Employee.status == "on_bench") | (models.Employee.is_on_bench == True)
+        ).filter(models.Employee.status != "archived", models.Employee.status != "suspended", models.Employee.status != "assigned").all()
 
-    def create(self, name: str, resume_text: str, is_on_bench: bool = True):
+    def get_by_status(self, status: str):
+        """
+        Retrieves employees filtered by status.
+        """
+        return self.db.query(models.Employee).filter(models.Employee.status == status).all()
+
+    def create(self, name: str, resume_text: str, is_on_bench: bool = True, status: str = "on_bench"):
         """
         Creates and persists a new employee record.
-        - What: INSERT INTO employees (name, resume_text, is_on_bench) VALUES (...);
-        - Why: Handles the complete lifecycle (add, commit, refresh) in one transaction.
-        - How: Instantiates a models.Employee and saves it via self.db session.
         """
-        db_emp = models.Employee(name=name, resume_text=resume_text, is_on_bench=is_on_bench)
+        db_emp = models.Employee(name=name, resume_text=resume_text, is_on_bench=is_on_bench, status=status)
         self.db.add(db_emp)
         self.db.commit()
         self.db.refresh(db_emp)
         return db_emp
+
+    def update_status(self, employee_id: int, status: str):
+        """
+        Updates an employee's talent lifecycle status.
+        """
+        emp = self.get_by_id(employee_id)
+        if not emp:
+            return None
+        emp.status = status
+        emp.is_on_bench = (status == "on_bench")
+        self.db.add(emp)
+        self.db.commit()
+        self.db.refresh(emp)
+        return emp
+
+    def update_profile(self, employee_id: int, name: str = None, resume_text: str = None):
+        """
+        Updates an employee's profile details.
+        """
+        emp = self.get_by_id(employee_id)
+        if not emp:
+            return None
+        if name is not None:
+            emp.name = name
+        if resume_text is not None:
+            emp.resume_text = resume_text
+        self.db.add(emp)
+        self.db.commit()
+        self.db.refresh(emp)
+        return emp

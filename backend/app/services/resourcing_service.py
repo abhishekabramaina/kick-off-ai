@@ -108,12 +108,14 @@ class ResourcingService:
         
         matches = []
         for emp in bench_employees:
-            prompt = prompts.MATCHING_PROMPT.format(jd_text=role.draft_jd, resume_text=emp.resume_text)
-            response = await llm.generate_text(prompt)
-            
             try:
+                prompt = prompts.MATCHING_PROMPT.format(jd_text=role.draft_jd, resume_text=emp.resume_text)
+                response = await llm.generate_text(prompt)
+                
                 if "```json" in response:
                     response = response.split("```json")[1].split("```")[0].strip()
+                elif "```" in response:
+                    response = response.split("```")[1].split("```")[0].strip()
                 
                 match_data = json.loads(response)
                 
@@ -125,7 +127,8 @@ class ResourcingService:
                     justification=match_data['justification']
                 )
                 matches.append(db_match)
-            except:
-                continue # Skip failed individual matches
+            except Exception as e:
+                print(f"[ResourcingService] AI match skipped for employee {emp.id}: {e}")
+                continue # Skip candidate cleanly if AI call or parsing fails
         
         return matches

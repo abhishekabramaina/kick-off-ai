@@ -106,3 +106,29 @@ class ProjectService:
         project.raw_input = f"{current_input}\n\n[Ingested from Drive: {file_name}]\n{extracted_text}"
         
         return self.repo.save(project)
+
+    def archive_project(self, project_id: int):
+        """
+        Archives a project by updating its status to 'archived'.
+        """
+        project = self.get_project(project_id)
+        if not project:
+            return None
+        project.status = "archived"
+        return self.repo.save(project)
+
+    def unarchive_project(self, project_id: int):
+        """
+        Restores an archived project to 'finalized' or 'draft'.
+        """
+        project = self.get_project(project_id)
+        if not project:
+            return None
+        project.status = "finalized" if project.final_prd else "draft"
+        return self.repo.save(project)
+
+    def delete_project(self, project_id: int) -> bool:
+        """
+        Permanently deletes a project and its cascade data.
+        """
+        return self.repo.delete(project_id)
