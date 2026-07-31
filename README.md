@@ -29,6 +29,7 @@ The backend is built on **FastAPI** and **SQLAlchemy**, strictly adhering to **D
 - **Database ORM:** SQLAlchemy (Async/Sync)
 - **Data Validation:** Pydantic
 - **AI Orchestration:** Google Gemini 1.5 Flash (via `google-generativeai`)
+- **RAG Pipeline:** ChromaDB (Vector Store), Gemini `text-embedding-004` (Embeddings)
 - **Document Processing:** PyPDF2, python-docx
 - **Frontend (Client):** Next.js 14, React, TypeScript (Monorepo setup)
 
@@ -48,7 +49,12 @@ The backend is built on **FastAPI** and **SQLAlchemy**, strictly adhering to **D
 ### 3. Resourcing Domain (`ResourcingService`)
 - **Cross-Domain Orchestration:** Interacts with Project, Role, Employee, and Match repositories.
 - **Role Extraction:** Uses LLMs to analyze finalized PRDs and automatically generate required job descriptions and technical skill sets.
-- **Algorithmic Matching:** Evaluates benched employees against extracted roles, generating match scores and justifications to optimize team allocation.
+- **Two-Stage Matching:** Uses RAG-powered semantic retrieval to shortlist top-K candidates via vector similarity, then LLM deep evaluation for scoring and justification.
+
+### 4. RAG & Semantic Search (`RAGService`)
+- **Resume Indexing:** Automatically chunks and embeds employee resumes at write-time using Gemini `text-embedding-004`.
+- **Vector Store:** ChromaDB stores embeddings for fast cosine similarity retrieval (<50ms).
+- **Semantic Retrieval:** Natural language queries against the talent pool (e.g., "microservices experience") return ranked candidates.
 
 ---
 
@@ -56,12 +62,15 @@ The backend is built on **FastAPI** and **SQLAlchemy**, strictly adhering to **D
 
 The system is designed with extensibility in mind to handle incredible scale and speed.
 
+- **Phase 2.5: RAG & Semantic Candidate Matching (In Progress):**
+  - **Goal:** Replace brute-force LLM matching with two-stage retrieval (vector search + LLM deep evaluation).
+  - **Implementation:** ChromaDB vector store, Gemini embeddings, semantic resume chunking, top-K retrieval pipeline.
 - **Phase 3: Asynchronous Distributed Processing:**
   - **Goal:** Offload long-running LLM batch requests (e.g., scoring 100+ candidates) from the main API thread.
   - **Implementation:** Integration of a Message Broker (Redis/RabbitMQ) and distributed task workers (Celery).
 - **Phase 4: Advanced Search & Algorithms:**
-  - **Goal:** Move from brute-force LLM matching to scalable, mathematical retrieval.
-  - **Implementation:** Generating **Vector Embeddings** for resumes and job descriptions, stored in **pgvector**, utilizing Cosine Similarity search and optimization algorithms (Bipartite matching) for global bench allocation.
+  - **Goal:** Migrate vector store to pgvector, extend RAG to project documents and PRDs.
+  - **Implementation:** pgvector migration, document knowledge base, hybrid search, Bipartite matching for global bench allocation.
 - **Phase 5: Cloud Deployment:**
   - **Implementation:** Dockerization, CI/CD via GitHub Actions, and deployment to AWS.
 
