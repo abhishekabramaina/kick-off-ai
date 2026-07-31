@@ -19,7 +19,8 @@ class ResourcingService:
         project_repo: ProjectRepository,
         role_repo: RoleRepository,
         employee_repo: EmployeeRepository,
-        match_repo: MatchRepository
+        match_repo: MatchRepository,
+        retriever = None
     ):
         """
         Constructor-based Dependency Injection.
@@ -30,6 +31,7 @@ class ResourcingService:
         self.role_repo = role_repo
         self.employee_repo = employee_repo
         self.match_repo = match_repo
+        self.retriever = retriever
 
     async def extract_roles(self, project_id: int, llm: LLMService):
         """
@@ -91,8 +93,9 @@ class ResourcingService:
         - Step 1: Fetch role details.
         - Step 2: Optimization - Check if matches already exist.
         - Step 3: Fetch benched employees from EmployeeRepository.
-        - Step 4: Iteratively call LLM to score each candidate.
-        - Step 5: Persist results via MatchRepository.
+        - Step 4: (RAG Stage 1) If retriever is set, shortlist top 5-10 candidates via vector search.
+        - Step 5: (LLM Stage 2) Iteratively call LLM to score only the shortlisted candidates.
+        - Step 6: Persist results via MatchRepository.
         """
         role = self.role_repo.get_by_id(role_id)
         if not role:
@@ -103,11 +106,26 @@ class ResourcingService:
         if existing_matches:
             return existing_matches
 
-        # Cross-Domain: Using employee_repo to get candidates
+        # Fetch candidates currently on the bench
         bench_employees = self.employee_repo.get_on_bench()
-        
+        if not bench_employees:
+            return []
+
+        # Stage 1: Vector Search Shortlisting (RAG)
+        target_employees = bench_employees
+        if self.retriever and role.draft_jd:
+            bench_ids = [emp.id for emp in bench_employees]
+            similar_candidates = self.retriever.find_similar_candidates(
+                role_jd=role.draft_jd,
+                top_k=5,  # Fetch top 5 candidates to pass to LLM
+                employee_ids_filter=bench_ids
+            )
+            shortlist_ids = [sc["employee_id"] for sc in similar_candidates]
+            target_employees = [emp for emp in bench_employees if emp.id in shortlist_ids]
+
+        # Stage 2: Deep LLM Evaluation on Shortlisted Candidates
         matches = []
-        for emp in bench_employees:
+        for emp in target_employees:
             try:
                 prompt = prompts.MATCHING_PROMPT.format(jd_text=role.draft_jd, resume_text=emp.resume_text)
                 response = await llm.generate_text(prompt)
@@ -132,3 +150,4 @@ class ResourcingService:
                 continue # Skip candidate cleanly if AI call or parsing fails
         
         return matches
+

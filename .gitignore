@@ -49,6 +49,9 @@ env/
 # Project Specific
 backend/kickoff.db
 backend/uploads/
+backend/chroma_data/
+chroma_data/
 *.db
 Session_*.json
 *.log
+

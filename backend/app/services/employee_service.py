@@ -7,13 +7,14 @@ class EmployeeService:
     - Purpose: Coordinates between repositories and enforces business rules (Domain Logic).
     """
     
-    def __init__(self, repo: EmployeeRepository):
+    def __init__(self, repo: EmployeeRepository, rag_service = None):
         """
         Constructor-based Dependency Injection.
         - Why: Injects the EmployeeRepository to decouple business logic from data access logic.
         - How: Stores the repository instance in a local variable self.repo.
         """
         self.repo = repo
+        self.rag_service = rag_service
 
     def list_employees(self):
         """
@@ -37,10 +38,17 @@ class EmployeeService:
         return self.repo.get_by_id(employee_id)
 
     def create_employee(self, name: str, resume_text: str, is_on_bench: bool = True, status: str = "on_bench"):
-        return self.repo.create(name=name, resume_text=resume_text, is_on_bench=is_on_bench, status=status)
+        emp = self.repo.create(name=name, resume_text=resume_text, is_on_bench=is_on_bench, status=status)
+        if emp and self.rag_service:
+            self.rag_service.index_employee(self.repo.db, emp.id, emp.resume_text)
+        return emp
 
     def update_status(self, employee_id: int, status: str):
         return self.repo.update_status(employee_id, status)
 
     def update_profile(self, employee_id: int, name: str = None, resume_text: str = None):
-        return self.repo.update_profile(employee_id, name, resume_text)
+        emp = self.repo.update_profile(employee_id, name, resume_text)
+        if emp and self.rag_service and resume_text is not None:
+            self.rag_service.index_employee(self.repo.db, emp.id, emp.resume_text)
+        return emp
+

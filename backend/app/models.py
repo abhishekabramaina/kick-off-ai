@@ -50,3 +50,16 @@ class Match(Base):
 
     role = relationship("Role", back_populates="matches")
     employee = relationship("Employee", back_populates="matches")
+
+class DocumentChunk(Base):
+    __tablename__ = "document_chunks"
+
+    id = Column(Integer, primary_key=True, index=True)
+    source_type = Column(String(20), nullable=False)  # 'resume' | 'project_doc' | 'prd'
+    source_id = Column(Integer, nullable=False)        # employee_id or project_id
+    chunk_index = Column(Integer, nullable=False)
+    content = Column(Text, nullable=False)
+    metadata_json = Column(Text, nullable=True)        # Store serialized JSON string
+    embedding_id = Column(String(100), nullable=False) # Maps to ChromaDB ID
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+
